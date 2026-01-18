@@ -1,4 +1,6 @@
 package lc3vm
+import "core:fmt"
+import os "core:os/os2"
 
 /* Memory Storage */
 MEMORY_MAX :: (1 << 16)
@@ -55,7 +57,20 @@ FL :: enum u16 {
 
 main :: proc() {
 
-	//TODO: Load Arguments
+	/* Load Arguments */
+	argv := os.args
+	if len(os.args) < 2 {
+		fmt.println("lc3 [image-file]...")
+		os.exit(2)
+	}
+
+	for arg in argv {
+		if (!read_image(arg)) {
+			fmt.printfln("Failed to load image: %s", arg)
+			os.exit(1)
+		}
+	}
+
 	//TODO: Setup
 
 	/* since exactly one condition flag should be set at any given time, set the Z flag */
@@ -111,4 +126,24 @@ main :: proc() {
 	}
 
 	//TODO: Shutdown	
+}
+
+/* Sign Extend */
+sign_extend :: proc(x: u16, bit_count: u16) -> u16 {
+	x := x
+	if ((x >> (bit_count - 1)) & 1) != 0 {
+		x |= (0xFFFF << bit_count)
+	}
+	return x
+}
+
+/* Update Flags */
+update_flags :: proc(r: u16) {
+	if reg[r] == 0 {
+		reg[R.COND] = u16(FL.ZRO)
+	} else if (reg[r] >> 15) != 0 {
+		reg[R.COND] = u16(FL.NEG)
+	} else {
+		reg[R.COND] = u16(FL.POS)
+	}
 }
